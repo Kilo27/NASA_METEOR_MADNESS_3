@@ -9,6 +9,7 @@ public class GameBackend : MonoBehaviour
     [Header("API Configuration")]
     [SerializeField] private string apiBaseURL = "http://localhost:5000"; // Change to your API URL
     
+    public float scaleFactor = 1000000f;
 
     public static GameBackend Instance { get; private set; }
 
@@ -143,7 +144,7 @@ public class GameBackend : MonoBehaviour
             }
         }
     }
-
+    
     public void CalculateCrater(float mass, float velocity)
     {
         StartCoroutine(CalculateCraterCoroutine(mass, velocity));
@@ -177,7 +178,7 @@ public class GameBackend : MonoBehaviour
 
     public void BigBossSimulation()
     {
-        
+        Debug.Log("Big Boss Mode Engaged");
     }
 
     private void ProcessAsteroidData(string jsonData)
@@ -201,7 +202,7 @@ public class GameBackend : MonoBehaviour
 
    [System.Serializable]
     public class TrajectoryWrapper
-    {
+        {
         public List<Vector3> trajectory;
     }
 

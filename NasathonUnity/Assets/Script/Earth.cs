@@ -1,3 +1,4 @@
+using UnityEditor.PackageManager.Requests;
 using UnityEngine;
 
 public class Earth : MeshGenerator
@@ -5,9 +6,9 @@ public class Earth : MeshGenerator
     [SerializeField] private Ocean ocean;
     [SerializeField] private Mantle mantle;
     
-    public float crumpleAmount = 0.5f; // How far vertices get pulled in
-    public float crumpleRadius = 0.5f; // How big the area of crumpling is
-    public Vector3 crumpleCenter = Vector3.up; // Center of the crumple (world or local depending)
+    public float crumpleAmount = 1.0f; // How far vertices get pulled in
+    public float crumpleRadius = 1.0f; // How big the area of crumpling is
+    public Vector3 crumpleCenter = Vector3.zero; // Center of the crumple (world or local depending)
 
     Vector3 lastHitPoint;
 
@@ -16,16 +17,13 @@ public class Earth : MeshGenerator
         ocean = GameObject.Find("Ocean").GetComponent<Ocean>();
         mantle = GameObject.Find("Mantle").GetComponent<Mantle>();
     }
-    public void CrumpleAtWorldPoint(Vector3 worldImpactPoint, float radius, float depth, float mass)
+    public void CrumpleAtWorldPoint(Vector3 worldImpactPoint, float radius, float depth)
     {
         lastHitPoint = worldImpactPoint;
 
         MeshFilter mf = GetComponent<MeshFilter>();
         Mesh mesh = mf.sharedMesh;
         Vector3[] vertices = mesh.vertices;
-
-        radius += mass / 100;
-        depth += mass / 100;
 
         // Convert world point into *local space of the mesh*
         Vector3 localImpactPoint = transform.InverseTransformPoint(worldImpactPoint);
@@ -57,8 +55,8 @@ public class Earth : MeshGenerator
             collider.sharedMesh = mesh;
         }
 
-        mantle.CrumpleAtWorldPoint(worldImpactPoint, mantle.crumpleRadius + (mass / 100), mantle.crumpleAmount + (mass / 10));
-        ocean.StartTsunami(worldImpactPoint, mass);
+        mantle.CrumpleAtWorldPoint(worldImpactPoint, mantle.crumpleRadius, mantle.crumpleAmount);
+        ocean.StartTsunami(worldImpactPoint, 1.0f);
     }
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -79,7 +77,7 @@ public class Earth : MeshGenerator
                 Debug.DrawRay(ray.origin, ray.direction * hit.distance, Color.red, 2f);
 
                 lastHitPoint = hit.point;  // For OnDrawGizmos
-                CrumpleAtWorldPoint(hit.point, crumpleRadius, crumpleAmount, 1.0f);
+                CrumpleAtWorldPoint(hit.point, crumpleRadius, crumpleAmount);
             }
             else
             {

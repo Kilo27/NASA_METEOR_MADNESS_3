@@ -82,7 +82,7 @@ public class Ocean : MeshGenerator
         
         // --- ✨ LOGIC UPDATE: Start both coroutines ✨ ---
         StartCoroutine(AnimateTsunami(worldImpactPoint));
-        StartCoroutine(AnimateCraterFill(worldImpactPoint)); // The new coroutine
+        //StartCoroutine(AnimateCraterFill(worldImpactPoint)); // The new coroutine
     }
 
     private void ApplyCrater(Vector3 worldImpactPoint)

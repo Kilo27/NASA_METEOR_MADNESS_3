@@ -7,7 +7,7 @@ using System;
 
 public class AsteroidCreationUI : MonoBehaviour
 {
-
+    
     public static AsteroidCreationUI instance { get; private set; }
 
     [Header("UI Input Fields (TextMeshPro)")]

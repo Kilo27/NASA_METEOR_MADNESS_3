@@ -1,3 +1,4 @@
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Scripting.APIUpdating;
 
@@ -10,8 +11,8 @@ public class Asteroid : MonoBehaviour
     public float radius;
     public float mass;
     public float velocity;
-
     private Earth earth;
+    private AsteroidData data;
 
     private void Start()
     {
@@ -131,7 +132,9 @@ public class Asteroid : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        earth.CrumpleAtWorldPoint(other.ClosestPoint(transform.position), earth.crumpleRadius, earth.crumpleAmount, GetComponent<CelestialBody>().mass);
-        //Destroy(this.gameObject);
+        if (other.gameObject.name == "AsteroidKiller") {
+            Destroy(this.gameObject);
+        }
+        earth.CrumpleAtWorldPoint(other.ClosestPoint(transform.position), 1.0f, 1.0f);
     }
 }

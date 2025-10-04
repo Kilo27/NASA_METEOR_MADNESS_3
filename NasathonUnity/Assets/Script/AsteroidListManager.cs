@@ -196,7 +196,7 @@ public class AsteroidListManager : MonoBehaviour {
             {
                 if (!string.IsNullOrEmpty(line))
                 {
-                    Debug.Log(line);
+                    //Debug.Log(line);
                     AsteroidDataClass asteroid = JsonUtility.FromJson<AsteroidDataClass>(line);
                     Debug.Log(asteroid);
                     allAsteroids.Add(asteroid);
