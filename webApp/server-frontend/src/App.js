@@ -3,7 +3,7 @@ import React, { useEffect, useRef } from "react";
 import "./App.css";
 function App() {
   const canvasRef = useRef(null);
-  const unityInstanceRef = useRef(null); // ✅ useRef instead of let
+  const unityInstanceRef = useRef(null); 
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -26,11 +26,9 @@ function App() {
       if (window.createUnityInstance) {
         window
           .createUnityInstance(canvas, config, (progress) => {
-            document.querySelector("#unity-progress-bar-full").style.width =
-              100 * progress + "%";
-          })
+            document.querySelector("#unity-progress-bar-full").style.width =100 * progress + "%";})
           .then((unityInstance) => {
-            unityInstanceRef.current = unityInstance; // ✅ stored in ref
+            unityInstanceRef.current = unityInstance;
             document.querySelector("#unity-loading-bar").style.display = "none";
             document.querySelector("#unity-fullscreen-button").onclick = () => {
               unityInstance.SetFullscreen(1);
@@ -43,7 +41,7 @@ function App() {
 
     return () => {
       if (unityInstanceRef.current) {
-        unityInstanceRef.current.Quit(); // ✅ safe cleanup
+        unityInstanceRef.current.Quit();
       }
       document.body.removeChild(script);
     };
