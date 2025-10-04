@@ -11,7 +11,7 @@ public class MeshGenerator : MonoBehaviour
     // You can keep your old public variables, but the new method will use these:
     public Mesh mesh;
     public float radius = 1f;
-    [Range(0, 6)]
+    [Range(0, 24)]
     public int subdivisions = 4; // 3-4 is a good starting point
 
     // --- REPLACE YOUR OLD GenerateSphere() METHOD WITH THIS ---
