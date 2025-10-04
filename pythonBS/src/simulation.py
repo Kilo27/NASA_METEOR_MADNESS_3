@@ -320,8 +320,10 @@ def simulate_asteroid_impact(mean_diameter, velocity, impact_angle):
             "tsunami_class": tsunami_category
         }
     }
-    obj = json.dumps(results, indent=2)
-    obj.replace("\n","")
+    obj = results
+    obj_str = json.dumps(obj).replace('\n', '')
+    obj = json.loads(obj_str)
+   
     return obj
 
 

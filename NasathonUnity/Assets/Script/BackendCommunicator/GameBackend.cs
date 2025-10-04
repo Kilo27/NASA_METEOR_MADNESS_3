@@ -69,7 +69,7 @@ public class GameBackend : MonoBehaviour
                 string text = webRequest.downloadHandler.text;
                 Debug.Log("Trajectory data received: " + text);
 
-                var parsed = ProcessTrajectoryData(text); // e.g. List<float[]>
+                var parsed = ProcessTrajectoryData(text);
                 onComplete?.Invoke(parsed);
             }
             else
@@ -173,6 +173,11 @@ public class GameBackend : MonoBehaviour
                     break;
             }
         }
+    }
+
+    public void BigBossSimulation()
+    {
+        
     }
 
     private void ProcessAsteroidData(string jsonData)
