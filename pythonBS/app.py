@@ -27,7 +27,7 @@ def asteroid_info(methods="POST"):
 def asteroid_info_by_day(methods="POST"):
     asteroid_id=int(request.args.get("asteroid_id"))
     day=int(request.args.get("day"))
-    return jsonify(getData.get_asteroid_info(asteroid_id, day))
+    return jsonify(getData.get_asteroid_info_with_day(asteroid_id, day))
 
 @app.route("/simulate")
 def simulation1():
