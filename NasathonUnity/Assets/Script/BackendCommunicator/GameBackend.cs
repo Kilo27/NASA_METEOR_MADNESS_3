@@ -175,9 +175,78 @@ public class GameBackend : MonoBehaviour
         }
     }
 
-    public void BigBossSimulation()
+    [System.Serializable]
+    public class BigBossResponse
     {
+        public Dictionary<string, string> asteroid_properties;
+        public Dictionary<string, string> atmospheric_passage;
+        public Dictionary<string, string> effect_radii;
+        public Dictionary<string, string> effects_at_crater_rim;
+        public Dictionary<string, string> impact_crater;
+        public Dictionary<string, string> impact_severity_classification;
+        public Dictionary<string, string> input_parameters;
+        public Dictionary<string, string> seismic_effects;
+        public Dictionary<string, string> tsunami_effects;
+    }
+
+    public Dictionary<string, Dictionary<string, string>> ParseBigBoss(string jsonResponse)
+    {
+        Dictionary<string, Dictionary<string, string>> result = new Dictionary<string, Dictionary<string, string>>();
         
+        try
+        {
+            // First, deserialize into the structured class
+            BigBossResponse data = JsonUtility.FromJson<BigBossResponse>(jsonResponse);
+            
+            // Convert each category to Dictionary<string, string>
+            if (data.asteroid_properties != null)
+                result["asteroid_properties"] = ConvertToStringDictionary(data.asteroid_properties);
+            
+            if (data.atmospheric_passage != null)
+                result["atmospheric_passage"] = ConvertToStringDictionary(data.atmospheric_passage);
+            
+            if (data.effect_radii != null)
+                result["effect_radii"] = ConvertToStringDictionary(data.effect_radii);
+            
+            if (data.effects_at_crater_rim != null)
+                result["effects_at_crater_rim"] = ConvertToStringDictionary(data.effects_at_crater_rim);
+            
+            if (data.impact_crater != null)
+                result["impact_crater"] = ConvertToStringDictionary(data.impact_crater);
+            
+            if (data.impact_severity_classification != null)
+                result["impact_severity_classification"] = ConvertToStringDictionary(data.impact_severity_classification);
+            
+            if (data.input_parameters != null)
+                result["input_parameters"] = ConvertToStringDictionary(data.input_parameters);
+            
+            if (data.seismic_effects != null)
+                result["seismic_effects"] = ConvertToStringDictionary(data.seismic_effects);
+            
+            if (data.tsunami_effects != null)
+                result["tsunami_effects"] = ConvertToStringDictionary(data.tsunami_effects);
+            
+            Debug.Log($"Successfully parsed {result.Count} categories");
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"Failed to parse BigBoss response: {e.Message}");
+        }
+        
+        return result;
+    }
+
+    private Dictionary<string, string> ConvertToStringDictionary(Dictionary<string, string> source)
+    {
+        // This method ensures all values are properly converted to strings
+        Dictionary<string, string> result = new Dictionary<string, string>();
+        
+        foreach (var kvp in source)
+        {
+            result[kvp.Key] = kvp.Value?.ToString() ?? "null";
+        }
+        
+        return result;
     }
 
     private void ProcessAsteroidData(string jsonData)
@@ -203,11 +272,6 @@ public class GameBackend : MonoBehaviour
     public class TrajectoryWrapper
     {
         public List<Vector3> trajectory;
-        
-
-
-
-
     }
 
     private List<Vector3> ProcessTrajectoryData(string jsonData)
