@@ -35,7 +35,7 @@ def simulation1():
     velocity = float(request.args.get("velocity"))
     impact_angle = int(request.args.get("impact_angle"))
 
-    return simulation.simulate_asteroid_impact(diameter, velocity, impact_angle) # http://127.0.0.1:5000/simulate?diameter=19&velocity=19000&impact_angle=45
+    return jsonify(simulation.simulate_asteroid_impact(diameter, velocity, impact_angle)) # http://127.0.0.1:5000/simulate?diameter=19&velocity=19000&impact_angle=45
 
 if __name__ == '__main__':
     app.run()
