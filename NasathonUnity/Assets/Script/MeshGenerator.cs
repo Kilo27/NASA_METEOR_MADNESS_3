@@ -11,7 +11,7 @@ public class MeshGenerator : MonoBehaviour
     // You can keep your old public variables, but the new method will use these:
     public Mesh mesh;
     public float radius = 1f;
-    [Range(0, 6)]
+    [Range(0, 24)]
     public int subdivisions = 4; // 3-4 is a good starting point
 
     // --- REPLACE YOUR OLD GenerateSphere() METHOD WITH THIS ---
@@ -62,23 +62,39 @@ public class MeshGenerator : MonoBehaviour
         triangles = newTriangles;
     }
 
-    // --- THIS IS THE CRUCIAL PART THAT WAS LIKELY MISSING ---
-    // First, assign the vertices and triangles BEFORE calculating UVs and normals
-    mesh.vertices = vertices.ToArray();
-    mesh.triangles = triangles.ToArray();
-
-    // Calculate UV coordinates for texturing
-    Vector2[] uvs = new Vector2[vertices.Count];
+    // --- ✨ REVISED AND CORRECTED UV GENERATION LOGIC ✨ ---
+    
+    // First, calculate the initial UVs
+    List<Vector2> uvs = new List<Vector2>(vertices.Count);
     for (int i = 0; i < vertices.Count; i++)
     {
         Vector3 unitVertex = vertices[i].normalized;
         float u = 0.5f + (Mathf.Atan2(unitVertex.z, unitVertex.x) / (2 * Mathf.PI));
         float v = 0.5f - (Mathf.Asin(unitVertex.y) / Mathf.PI);
-        uvs[i] = new Vector2(u, v);
+        uvs.Add(new Vector2(u, v));
     }
-    // Assign the calculated UVs to the mesh
-    mesh.uv = uvs;
 
+    // Second, find triangles that cross the seam and fix them by duplicating vertices
+    for (int i = 0; i < triangles.Count; i += 3)
+    {
+        Vector2 uv1 = uvs[triangles[i]];
+        Vector2 uv2 = uvs[triangles[i + 1]];
+        Vector2 uv3 = uvs[triangles[i + 2]];
+
+        // Check if this triangle crosses the UV seam (0 to 1)
+        if (Mathf.Abs(uv1.x - uv2.x) > 0.5f || Mathf.Abs(uv1.x - uv3.x) > 0.5f || Mathf.Abs(uv2.x - uv3.x) > 0.5f)
+        {
+            // Duplicate the vertices that are on the "wrong" side of the seam (u < 0.5)
+            // and give them a new UV coordinate (u + 1)
+            if (uv1.x < 0.5f) triangles[i] = DuplicateVertex(triangles[i], vertices, uvs);
+            if (uv2.x < 0.5f) triangles[i + 1] = DuplicateVertex(triangles[i + 1], vertices, uvs);
+            if (uv3.x < 0.5f) triangles[i + 2] = DuplicateVertex(triangles[i + 2], vertices, uvs);
+        }
+    }
+    
+    mesh.vertices = vertices.ToArray();
+    mesh.triangles = triangles.ToArray();
+    mesh.uv = uvs.ToArray();
     mesh.RecalculateNormals();
 
     GetComponent<MeshFilter>().sharedMesh = mesh;
@@ -90,26 +106,36 @@ public class MeshGenerator : MonoBehaviour
     }
 }
 
-    private int GetMidpointIndex(Dictionary<long, int> cache, int i1, int i2, List<Vector3> vertices)
-    {
-        long smallerIndex = Mathf.Min(i1, i2);
-        long greaterIndex = Mathf.Max(i1, i2);
-        long key = (smallerIndex << 32) + greaterIndex;
+// Helper method to duplicate a vertex and adjust its UV
+private int DuplicateVertex(int index, List<Vector3> vertices, List<Vector2> uvs)
+{
+    Vector3 newVertex = vertices[index];
+    Vector2 newUv = uvs[index] + Vector2.right; // Add 1 to the U coordinate
+    
+    vertices.Add(newVertex);
+    uvs.Add(newUv);
+    
+    return vertices.Count - 1; // Return the index of the new vertex
+}
 
-        if (cache.TryGetValue(key, out int ret))
-        {
-            return ret;
-        }
+// GetMidpointIndex method remains the same as you had before
+private int GetMidpointIndex(Dictionary<long, int> cache, int i1, int i2, List<Vector3> vertices)
+{
+    long smallerIndex = Mathf.Min(i1, i2);
+    long greaterIndex = Mathf.Max(i1, i2);
+    long key = (smallerIndex << 32) + greaterIndex;
 
-        Vector3 p1 = vertices[i1];
-        Vector3 p2 = vertices[i2];
-        Vector3 middle = (p1 + p2) / 2f;
-        
-        int newIndex = vertices.Count;
-        vertices.Add(middle.normalized * radius);
-        cache.Add(key, newIndex);
-        return newIndex;
-    }
+    if (cache.TryGetValue(key, out int ret)) { return ret; }
+
+    Vector3 p1 = vertices[i1];
+    Vector3 p2 = vertices[i2];
+    Vector3 middle = (p1 + p2) / 2f;
+    
+    int newIndex = vertices.Count;
+    vertices.Add(middle.normalized * radius);
+    cache.Add(key, newIndex);
+    return newIndex;
+}
 }
 
 

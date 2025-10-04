@@ -9,12 +9,23 @@ public class Earth : MeshGenerator
     public float crumpleRadius = 0.5f; // How big the area of crumpling is
     public Vector3 crumpleCenter = Vector3.up; // Center of the crumple (world or local depending)
 
+    Vector3 lastHitPoint;
 
-    public void CrumpleAtWorldPoint(Vector3 worldImpactPoint, float radius, float depth)
+    void Awake()
     {
+        ocean = GameObject.Find("Ocean").GetComponent<Ocean>();
+        mantle = GameObject.Find("Mantle").GetComponent<Mantle>();
+    }
+    public void CrumpleAtWorldPoint(Vector3 worldImpactPoint, float radius, float depth, float mass)
+    {
+        lastHitPoint = worldImpactPoint;
+
         MeshFilter mf = GetComponent<MeshFilter>();
         Mesh mesh = mf.sharedMesh;
         Vector3[] vertices = mesh.vertices;
+
+        radius += mass / 100;
+        depth += mass / 100;
 
         // Convert world point into *local space of the mesh*
         Vector3 localImpactPoint = transform.InverseTransformPoint(worldImpactPoint);
@@ -46,8 +57,8 @@ public class Earth : MeshGenerator
             collider.sharedMesh = mesh;
         }
 
-        ocean.StartTsunami(worldImpactPoint);
-        mantle.CrumpleAtWorldPoint(worldImpactPoint, mantle.crumpleRadius, mantle.crumpleAmount);
+        mantle.CrumpleAtWorldPoint(worldImpactPoint, mantle.crumpleRadius + (mass / 100), mantle.crumpleAmount + (mass / 10));
+        ocean.StartTsunami(worldImpactPoint, mass);
     }
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -68,7 +79,7 @@ public class Earth : MeshGenerator
                 Debug.DrawRay(ray.origin, ray.direction * hit.distance, Color.red, 2f);
 
                 lastHitPoint = hit.point;  // For OnDrawGizmos
-                CrumpleAtWorldPoint(hit.point, crumpleRadius, crumpleAmount);
+                CrumpleAtWorldPoint(hit.point, crumpleRadius, crumpleAmount, 1.0f);
             }
             else
             {
@@ -76,8 +87,6 @@ public class Earth : MeshGenerator
             }
         }
     }
-
-    Vector3 lastHitPoint;
 
     void OnDrawGizmos()
     {
