@@ -199,10 +199,15 @@ public class GameBackend : MonoBehaviour
         }
     }
 
-   [System.Serializable]
+    [System.Serializable]
     public class TrajectoryWrapper
     {
         public List<Vector3> trajectory;
+        
+
+
+
+
     }
 
     private List<Vector3> ProcessTrajectoryData(string jsonData)
