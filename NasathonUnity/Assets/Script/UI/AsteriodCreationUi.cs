@@ -74,6 +74,12 @@ public class AsteroidCreationUI : MonoBehaviour
         // Optional: Clear input fields after creation
         ClearInputFields();
     }
+    
+    private void Update() {
+        if(Input.GetKeyDown("return")) {
+            OnCreateButtonClicked();
+        }
+    }
 
     private float ParseFloatInput(TMP_InputField inputField, string fieldName)
     {
