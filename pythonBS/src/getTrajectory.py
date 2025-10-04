@@ -16,7 +16,7 @@ from datetime import datetime
 #Class Asteroid:
 AU_TO_M = 149597870000.7  # 1 AU in meters
 def solve_kepler(M, e, tolerance=1e-6):
-    """Solve Kepler's Equation M = E - e*sin(E) using Newton-Raphson method."""
+    #Solve Kepler's Equation M = E - e*sin(E) using Newton-Raphson method.
     E = M if e < 0.8 else np.pi
     while True:
         delta = E - e * np.sin(E) - M
