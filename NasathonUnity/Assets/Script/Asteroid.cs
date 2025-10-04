@@ -1,30 +1,28 @@
 using UnityEngine;
 using UnityEngine.Scripting.APIUpdating;
 
-[RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
+[RequireComponent(typeof(MeshFilter), typeof(MeshRenderer), typeof(Rigidbody))]
 public class Asteroid : MonoBehaviour
 {
-
     public Mesh mesh;
     public int longitudeSegments = 20;
     public int latitudeSegments = 20;
-
     public float radius;
     public float mass;
     public float velocity;
 
-    private GameObject earth;
+    private Earth earth;
 
     private void Start()
     {
-        earth = GameObject.Find("Earth");
+        earth = GameObject.Find("Earth").GetComponent<Earth>();
     }
 
     public void InitializeMesh(AsteroidCreationUI.AsteroidCreationData data)
     {
         radius = data.diameter / 2;
-        mass = data.mass;
         velocity = data.velocity;
+        GetComponent<CelestialBody>().mass = data.mass;
 
         mesh = new Mesh();
         mesh.name = "Procedural Asteroid";
@@ -125,15 +123,7 @@ public class Asteroid : MonoBehaviour
         // Find Earth by tag (make sure your Earth GameObject has the "Earth" tag)
 
 
-        if (earth != null)
-        {
-            // Calculate direction to Earth
-            Vector3 directionToEarth = (earth.transform.position - transform.position).normalized;
-
-            // Move towards Earth
-            transform.position += directionToEarth * velocity * Time.deltaTime;
-        }
-        else
+        if (earth == null)
         {
             Debug.LogWarning("Earth not found! Make sure there's a GameObject with tag 'Earth'");
         }
@@ -141,9 +131,7 @@ public class Asteroid : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        Debug.Log(other);
-        Earth earth = other.GetComponent<Earth>();
-        earth.CrumpleAtWorldPoint(transform.position, earth.crumpleRadius, earth.crumpleAmount);
-        Destroy(this.gameObject);
+        earth.CrumpleAtWorldPoint(other.ClosestPoint(transform.position), earth.crumpleRadius, earth.crumpleAmount, GetComponent<CelestialBody>().mass);
+        //Destroy(this.gameObject);
     }
 }

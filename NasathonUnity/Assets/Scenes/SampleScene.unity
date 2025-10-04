@@ -669,13 +669,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Ocean
   mesh: {fileID: 0}
   radius: 0.99
-  subdivisions: 4
+  subdivisions: 6
   waveAmplitude: 0.1
-  waveWidth: 25
-  waveSpeed: 60
-  craterDepth: 2
-  craterRadius: 8.5
-  craterFalloff: 0.5
+  waveWidth: 2
+  waveSpeed: 2
+  ogWrapAngleDegrees: 48.1
+  ogCraterDepth: 0.1
+  ogCraterRadius: 2
+  ogCraterFalloff: 0.1
+  craterFillSpeed: 0.05
 --- !u!54 &265756342
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -684,7 +686,7 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 265756339}
   serializedVersion: 5
-  m_Mass: 1
+  m_Mass: 0.0000001
   m_LinearDamping: 0
   m_AngularDamping: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}
@@ -716,11 +718,11 @@ MeshCollider:
     m_Bits: 0
   m_ExcludeLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 4294967295
   m_LayerOverridePriority: 0
   m_IsTrigger: 1
-  m_ProvidesContacts: 1
-  m_Enabled: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 0
   serializedVersion: 5
   m_Convex: 1
   m_CookingOptions: 30
@@ -948,6 +950,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 374552321}
+  - component: {fileID: 374552323}
+  - component: {fileID: 374552322}
   m_Layer: 0
   m_Name: Planet
   m_TagString: Untagged
@@ -973,6 +977,47 @@ Transform:
   - {fileID: 805724808}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &374552322
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 374552320}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 85829fd6bb28e4adfbfb8cd27eb36c9f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CelestialBody
+  mass: 4
+  initialVelocity: {x: 0, y: 0, z: 0}
+--- !u!54 &374552323
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 374552320}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 0
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 14
+  m_CollisionDetection: 1
 --- !u!1 &410087039
 GameObject:
   m_ObjectHideFlags: 0
@@ -1721,7 +1766,7 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 686873584}
   serializedVersion: 5
-  m_Mass: 1
+  m_Mass: 0.0000001
   m_LinearDamping: 0
   m_AngularDamping: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}
@@ -1753,10 +1798,10 @@ MeshCollider:
     m_Bits: 0
   m_ExcludeLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 4294967295
   m_LayerOverridePriority: 0
   m_IsTrigger: 1
-  m_ProvidesContacts: 1
+  m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 5
   m_Convex: 1
@@ -1831,11 +1876,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Mantle
   mesh: {fileID: 0}
-  radius: 0.98
+  radius: 0.989
   subdivisions: 4
-  crumpleAmount: 0.1
-  crumpleRadius: 0.2
-  crumpleCenter: {x: 0, y: 1, z: 0}
+  crumpleAmount: 0.01
+  crumpleRadius: 0.1
+  crumpleCenter: {x: 0, y: 0, z: 0}
 --- !u!1 &731498105
 GameObject:
   m_ObjectHideFlags: 0
@@ -1875,7 +1920,7 @@ Transform:
   m_GameObject: {fileID: 731498105}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 5.13, y: 3.65, z: 6.97}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2200,7 +2245,7 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 805724806}
   serializedVersion: 5
-  m_Mass: 1
+  m_Mass: 0.0000001
   m_LinearDamping: 0
   m_AngularDamping: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}
@@ -2236,9 +2281,9 @@ MonoBehaviour:
   subdivisions: 4
   ocean: {fileID: 265756341}
   mantle: {fileID: 686873591}
-  crumpleAmount: 0.25
-  crumpleRadius: 0.25
-  crumpleCenter: {x: 0, y: 1, z: 0}
+  crumpleAmount: 0.1
+  crumpleRadius: 0.3
+  crumpleCenter: {x: 0, y: 0, z: 0}
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0
