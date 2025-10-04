@@ -179,7 +179,7 @@ public class AsteroidListManager : MonoBehaviour {
             AsteroidListButton prefab = Instantiate(asteroidButtonPrefab, contentParent);
             prefab.Setup(data);
             i++;
-            if (i >= 8) {
+            if (i >= 40) {
                 break;
             }
         }
