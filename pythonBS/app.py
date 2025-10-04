@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
-from datetime import datetime
 from src import getTrajectory
 from API_calls import getData
+from src import  geographicData
 
 app=Flask(__name__)
 
@@ -22,10 +22,18 @@ def get_trajectory():
 def asteroid_info(methods="POST"):
     asteroid_id=int(request.args.get("asteroid_id"))
     return jsonify(getData.get_asteroid_info(asteroid_id))
+
 @app.route("/getAsteroidInfoByDay")#http://localhost:5000/getAsteroidInfoByDay?asteroid_id=2497232&day=0
 def asteroid_info_by_day(methods="POST"):
     asteroid_id=int(request.args.get("asteroid_id"))
     day=int(request.args.get("day"))
     return jsonify(getData.get_asteroid_info(asteroid_id, day))
+
+@app.route("/calculateCrater")
+def calccrater():
+    asteroid_mass = int(request.args.get("mass"))
+    velocity = float(request.args.get("velocity"))
+    return (geographicData.calculateCrater(asteroid_mass, velocity))
+
 if __name__ == '__main__':
     app.run()
