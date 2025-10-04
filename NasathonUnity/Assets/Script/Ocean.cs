@@ -9,6 +9,8 @@ public class Ocean : MeshGenerator
     [Range(1f, 90f)]
     public float waveWidth = 25f;
     public float waveSpeed = 60f;
+
+    [Tooltip("How far the wave travels around the sphere in degrees before fading out.")]
     [Range(1f, 180f)]
     public float ogWrapAngleDegrees = 30f;
     private float wrapAngleDegrees;
@@ -19,6 +21,7 @@ public class Ocean : MeshGenerator
     public float ogCraterRadius = 15f;
     public float ogCraterFalloff = 2f;
     
+    // --- ✨ NEW PARAMETER ✨ ---
     [Tooltip("The speed at which water flows back into the crater.")]
     public float craterFillSpeed = 0.05f; 
 
@@ -33,6 +36,7 @@ public class Ocean : MeshGenerator
 
     void Awake()
     {
+        // Attempt to find the Mantle object in the scene.
         GameObject mantleObject = GameObject.Find("Mantle");
         if (mantleObject != null)
         {
@@ -49,48 +53,36 @@ public class Ocean : MeshGenerator
 
     void Update()
     {
+        // Example for testing with a mouse click
         if (Input.GetMouseButtonDown(0))
         {
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             if (Physics.Raycast(ray, out RaycastHit hit))
             {
+                // This assumes your Mantle script has a public method to deform itself.
+                // You would call this from your main asteroid impact script.
                 if (mantle != null)
                 {
-                    // mantle.DeformMantle(hit.point, 1.0f); 
+                    // Example: mantle.DeformMantle(hit.point, 1.0f);
                 }
                 StartTsunami(hit.point, 1.0f);
             }
         }
     }
 
-    // --- ⬇️ ALTERED METHOD ⬇️ ---
-    // This method now just starts the master sequence coroutine.
     public void StartTsunami(Vector3 worldImpactPoint, float mass)
     {
         StopAllCoroutines();
-        StartCoroutine(RunImpactSequence(worldImpactPoint, mass));
-    }
-
-    // --- ✨ NEW MASTER COROUTINE ✨ ---
-    // This coroutine controls the sequence of events: crater, then tsunami, then fill.
-    private IEnumerator RunImpactSequence(Vector3 worldImpactPoint, float mass)
-    {
-        // 1. Set up all the impact parameters
         craterDepth = ogCraterDepth + (mass / 100);
         craterFalloff = ogCraterFalloff + (mass / 100);
         craterRadius = ogCraterRadius + (mass / 100);
         wrapAngleDegrees = ogWrapAngleDegrees + (mass / 100);
 
-        // 2. Apply the initial "evaporation" crater
         ApplyCrater(worldImpactPoint);
-
-        // 3. Run the tsunami animation AND WAIT FOR IT TO COMPLETE.
-        // The 'yield return' is the magic here. It pauses this coroutine
-        // until AnimateTsunami is finished.
-        yield return StartCoroutine(AnimateTsunami(worldImpactPoint));
         
-        // 4. NOW that the tsunami is over, start the crater fill animation.
-        yield return StartCoroutine(AnimateCraterFill(worldImpactPoint));
+        // --- ✨ LOGIC UPDATE: Start both coroutines ✨ ---
+        StartCoroutine(AnimateTsunami(worldImpactPoint));
+        StartCoroutine(AnimateCraterFill(worldImpactPoint)); // The new coroutine
     }
 
     private void ApplyCrater(Vector3 worldImpactPoint)
@@ -117,8 +109,6 @@ public class Ocean : MeshGenerator
 
     private IEnumerator AnimateTsunami(Vector3 worldImpactPoint)
     {
-        // This coroutine remains mostly the same, but it no longer needs to worry
-        // about the fill animation happening at the same time.
         currentVertices = new Vector3[originalVertices.Length];
         Vector3 localImpactPoint = transform.InverseTransformPoint(worldImpactPoint).normalized;
 
@@ -140,6 +130,7 @@ public class Ocean : MeshGenerator
 
             for (int i = 0; i < currentVertices.Length; i++)
             {
+                // Read from the (potentially changing) base mesh each frame
                 Vector3 baseVertex = originalVertices[i];
                 float heightOffset = 0f;
                 float distanceToCrest = Mathf.Abs(vertexAngles[i] - currentWaveAngle);
@@ -151,6 +142,7 @@ public class Ocean : MeshGenerator
                     heightOffset = waveShape * currentAmplitude;
                 }
                 
+                // Apply the wave height on top of the base vertex position
                 currentVertices[i] = baseVertex.normalized * (baseVertex.magnitude + heightOffset);
             }
 
@@ -167,7 +159,7 @@ public class Ocean : MeshGenerator
             yield return null;
         }
 
-        // When the tsunami is over, snap back to the base mesh, which still has the empty crater.
+        // When the tsunami is over, snap back to the base mesh, which is still being filled.
         mesh.vertices = originalVertices;
         mesh.RecalculateNormals();
         var finalCol = GetComponent<MeshCollider>();
@@ -178,14 +170,24 @@ public class Ocean : MeshGenerator
         }
     }
 
+    // --- ✨ NEW COROUTINE ✨ ---
     private IEnumerator AnimateCraterFill(Vector3 worldImpactPoint)
     {
-        // This coroutine is now only responsible for filling the crater, and it
-        // directly modifies the mesh vertices since the tsunami is over.
-        if (mantle == null) yield break;
+        if (mantle == null)
+        {
+            Debug.LogError("Mantle reference is missing. Cannot fill crater.");
+            yield break;
+        }
         
+        // This requires you to add a public property to your Mantle.cs script.
+        // See the note below the code block for an example.
         Vector3[] mantleVertices = mantle.DeformedVertices; 
-        if (mantleVertices == null || mantleVertices.Length != originalVertices.Length) yield break;
+    
+        if (mantleVertices == null || mantleVertices.Length != originalVertices.Length)
+        {
+            Debug.LogError("Mantle vertices not available or mismatched length!");
+            yield break;
+        }
     
         Vector3 localImpactPoint = transform.InverseTransformPoint(worldImpactPoint).normalized;
         bool isStillFilling = true;
@@ -197,26 +199,26 @@ public class Ocean : MeshGenerator
             for (int i = 0; i < originalVertices.Length; i++)
             {
                 float angle = Vector3.Angle(originalVertices[i].normalized, localImpactPoint);
+
                 if (angle < craterRadius)
                 {
+                    // The target for this water vertex is on the mantle's surface, at sea level
                     Vector3 targetPosition = mantleVertices[i].normalized * radius;
+
                     if (originalVertices[i] != targetPosition)
                     {
+                        // Slowly move the base vertex towards its final resting position
                         originalVertices[i] = Vector3.MoveTowards(
                             originalVertices[i],
                             targetPosition,
                             craterFillSpeed * Time.deltaTime
                         );
+                    
                         isStillFilling = true; 
                     }
                 }
             }
-
-            // Directly update the mesh vertices each frame during the fill
-            mesh.vertices = originalVertices;
-            mesh.RecalculateNormals();
-            
-            yield return null;
+            yield return null; // Wait for the next frame
         }
     }
 }

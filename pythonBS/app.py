@@ -29,13 +29,13 @@ def asteroid_info_by_day(methods="POST"):
     day=int(request.args.get("day"))
     return jsonify(getData.get_asteroid_info_with_day(asteroid_id, day))
 
-@app.route("/simulate")
+@app.route("/simulate")# http://127.0.0.1:5000/simulate?diameter=19&velocity=19000&impact_angle=45
 def simulation1():
     diameter = int(request.args.get("diameter"))
     velocity = float(request.args.get("velocity"))
     impact_angle = int(request.args.get("impact_angle"))
 
-    return simulation.simulate_asteroid_impact(diameter, velocity, impact_angle) # http://127.0.0.1:5000/simulate?diameter=19&velocity=19000&impact_angle=45
+    return jsonify(simulation.simulate_asteroid_impact(diameter, velocity, impact_angle)) 
 
 if __name__ == '__main__':
     app.run()

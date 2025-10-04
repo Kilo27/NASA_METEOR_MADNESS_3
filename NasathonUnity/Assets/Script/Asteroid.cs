@@ -132,6 +132,6 @@ public class Asteroid : MonoBehaviour
     void OnTriggerEnter(Collider other)
     {
         earth.CrumpleAtWorldPoint(other.ClosestPoint(transform.position), earth.crumpleRadius, earth.crumpleAmount, GetComponent<CelestialBody>().mass);
-        Destroy(this.gameObject);
+        //Destroy(this.gameObject);
     }
 }

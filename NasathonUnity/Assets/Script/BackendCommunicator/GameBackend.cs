@@ -17,134 +17,129 @@ public class GameBackend : MonoBehaviour
         Instance = this;
     }
 
-    public void GetAsteroids(string startDate, int weeks)
+    public void GetAsteroids(string startDate, int weeks, System.Action<List<AsteroidData>> onComplete)
     {
-        StartCoroutine(GetAsteroidsCoroutine(startDate, weeks));
+        StartCoroutine(GetAsteroidsCoroutine(startDate, weeks, onComplete));
     }
-    
-    private IEnumerator GetAsteroidsCoroutine(string startDate, int weeks)
+
+    private IEnumerator GetAsteroidsCoroutine(string startDate, int weeks, System.Action<List<AsteroidData>> onComplete)
     {
-        // Build the URL with query parameters
         string url = $"{apiBaseURL}/getAsteroids?start_date={startDate}&weeks={weeks}";
-        Debug.Log("Requesting URL: " );
-        
+        Debug.Log("Requesting URL: " + url);
+
         using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
         {
-            Debug.Log("SEND REQUEST ");
-            // Send the request
+            Debug.Log("SEND REQUEST");
             yield return webRequest.SendWebRequest();
 
-            // Handle the response
-            switch (webRequest.result)
+            if (webRequest.result == UnityWebRequest.Result.Success)
             {
-                case UnityWebRequest.Result.Success:
-                    string text = webRequest.downloadHandler.text;
-                    text = "{ \"asteroids\": " + text + "}";
+                string text = webRequest.downloadHandler.text;
+                // Wrap the raw array into an object so JsonUtility can parse it
+                text = "{ \"asteroids\": " + text + "}";
 
-                    Debug.Log("Asteroid data received: " + text);
-                    ProcessAsteroidData(text);
-                    break;
-                case UnityWebRequest.Result.ConnectionError:
+                Debug.Log("Asteroid data received: " + text);
 
-                case UnityWebRequest.Result.ProtocolError:
-
-                case UnityWebRequest.Result.DataProcessingError:
-                    Debug.LogError("Error: " + webRequest.error);
-                    break;
+                AsteroidDataResponse response = JsonUtility.FromJson<AsteroidDataResponse>(text);
+                onComplete?.Invoke(response.asteroids);
+            }
+            else
+            {
+                Debug.LogError("Error: " + webRequest.error);
+                onComplete?.Invoke(null);
             }
         }
     }
     
-    
-    public void GetTrajectory(int asteroidName, string endDate)
+    public void GetTrajectory(int asteroidID, string endDate, System.Action<List<Vector3>> onComplete)
     {
-        StartCoroutine(GetTrajectoryCouroutine(asteroidName, endDate));
+        StartCoroutine(GetTrajectoryCoroutine(asteroidID, endDate, onComplete));
     }
-    private IEnumerator GetTrajectoryCouroutine(int asteroidID, string endDate)
+
+    private IEnumerator GetTrajectoryCoroutine(int asteroidID, string endDate, System.Action<List<Vector3>> onComplete)
     {
-        // Build the URL with query parameters
         string url = $"{apiBaseURL}/calculateAsteroidTrajectory?asteroid_id={asteroidID}&end_date={endDate}";
-        
+
         using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
         {
-            // Send the request
             yield return webRequest.SendWebRequest();
-            
-            // Handle the response
-            switch (webRequest.result)
+
+            if (webRequest.result == UnityWebRequest.Result.Success)
             {
-                case UnityWebRequest.Result.Success:
-                    string text = webRequest.downloadHandler.text;
-                    Debug.Log("Trajectory data received: " + text);
-                    ProcessTrajectoryData(text);
-                    break;
-                case UnityWebRequest.Result.ConnectionError:
-                case UnityWebRequest.Result.ProtocolError:
-                case UnityWebRequest.Result.DataProcessingError:
-                    Debug.LogError("Error: " + webRequest.error);
-                    break;
+                string text = webRequest.downloadHandler.text;
+                Debug.Log("Trajectory data received: " + text);
+
+                var parsed = ProcessTrajectoryData(text);
+                onComplete?.Invoke(parsed);
+            }
+            else
+            {
+                Debug.LogError("Error: " + webRequest.error);
+                onComplete?.Invoke(null);
             }
         }
     }
 
-    public void GetAsteroidInfo(int asteroidID)
+    public void GetAsteroidInfo(int asteroidID, System.Action<AsteroidData> onComplete)
     {
-        StartCoroutine(GetAsteroidInfoCoroutine(asteroidID));
+        StartCoroutine(GetAsteroidInfoCoroutine(asteroidID, onComplete));
     }
 
-    private IEnumerator GetAsteroidInfoCoroutine(int asteroidID)
+    private IEnumerator GetAsteroidInfoCoroutine(int asteroidID, System.Action<AsteroidData> onComplete)
     {
-        // Build the URL with query parameters
         string url = $"{apiBaseURL}/getAsteroidInfo?asteroid_id={asteroidID}";
-        
+
         using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
         {
-            // Send the request
             yield return webRequest.SendWebRequest();
-            
-            // Handle the response
-            switch (webRequest.result)
+
+            if (webRequest.result == UnityWebRequest.Result.Success)
             {
-                case UnityWebRequest.Result.Success:
-                    Debug.Log("Asteroid info received: " + webRequest.downloadHandler.text);
-                    // Process asteroid info here
-                    break;
-                case UnityWebRequest.Result.ConnectionError:
-                case UnityWebRequest.Result.ProtocolError:
-                case UnityWebRequest.Result.DataProcessingError:
-                    Debug.LogError("Error: " + webRequest.error);
-                    break;
+                string text = webRequest.downloadHandler.text;
+                Debug.Log("Asteroid info received: " + text);
+
+                // Parse JSON into AsteroidInfo
+                AsteroidData info = JsonUtility.FromJson<AsteroidData>(text);
+
+                // Return via callback
+                onComplete?.Invoke(info);
+            }
+            else
+            {
+                Debug.LogError("Error: " + webRequest.error);
+                onComplete?.Invoke(null);
             }
         }
     }
 
-    public void GetAsteroidInfoByDay(int asteroidID, int day)
+    public void GetAsteroidInfoByDay(int asteroidID, int day, System.Action<AsteroidData> onComplete)
     {
-        StartCoroutine(GetAsteroidInfoByDayCoroutine(asteroidID, day));
+        StartCoroutine(GetAsteroidInfoByDayCoroutine(asteroidID, day, onComplete));
     }
 
-    private IEnumerator GetAsteroidInfoByDayCoroutine(int asteroidId, int day)
+    private IEnumerator GetAsteroidInfoByDayCoroutine(int asteroidId, int day, System.Action<AsteroidData> onComplete)
     {
-        // Build the URL with query parameters
         string url = $"{apiBaseURL}/getAsteroidInfoByDay?asteroid_id={asteroidId}&day={day}";
-        
+
         using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
         {
-            // Send the request
             yield return webRequest.SendWebRequest();
-            
-            // Handle the response
-            switch (webRequest.result)
+
+            if (webRequest.result == UnityWebRequest.Result.Success)
             {
-                case UnityWebRequest.Result.Success:
-                    Debug.Log("Asteroid info by day received: " + webRequest.downloadHandler.text);
-                    // Process asteroid info by day here
-                    break;
-                case UnityWebRequest.Result.ConnectionError:
-                case UnityWebRequest.Result.ProtocolError:
-                case UnityWebRequest.Result.DataProcessingError:
-                    Debug.LogError("Error: " + webRequest.error);
-                    break;
+                string text = webRequest.downloadHandler.text;
+                Debug.Log("Asteroid info by day received: " + text);
+
+                // Parse JSON into AsteroidData
+                AsteroidData info = JsonUtility.FromJson<AsteroidData>(text);
+
+                // Return via callback
+                onComplete?.Invoke(info);
+            }
+            else
+            {
+                Debug.LogError("Error: " + webRequest.error);
+                onComplete?.Invoke(null);
             }
         }
     }
@@ -178,6 +173,11 @@ public class GameBackend : MonoBehaviour
                     break;
             }
         }
+    }
+
+    public void BigBossSimulation()
+    {
+        
     }
 
     private void ProcessAsteroidData(string jsonData)
@@ -229,6 +229,7 @@ public class AsteroidDataResponse
 [System.Serializable]
 public class AsteroidData
 {
+    public string id;
     public string name;
     public float diameter; // in km
     public float velocity; // in km/s
