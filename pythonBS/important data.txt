@@ -1,0 +1,12 @@
+
+element_count yes
+near_earth_objects yes 
+    id yes
+    name yes
+    nasas_jpl_url yes
+    estimated_diameter yes
+        meters yes
+    is_potentially_hazardous_asteroid
+    close_approach_data 
+    is_sentry_object -> non zero probability of impact in 100 years
+
