@@ -6,6 +6,7 @@ public class Mantle : MeshGenerator
     public float crumpleRadius = 0.5f; // How big the area of crumpling is
     public Vector3 crumpleCenter = Vector3.up; // Center of the crumple (world or local depending)
 
+    public Vector3[] DeformedVertices { get; private set; }
 
     public void CrumpleAtWorldPoint(Vector3 worldImpactPoint, float radius, float depth)
     {
@@ -43,6 +44,8 @@ public class Mantle : MeshGenerator
             collider.sharedMesh = mesh;
         }
 
+        DeformedVertices = mesh.vertices; 
+                
     }
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created

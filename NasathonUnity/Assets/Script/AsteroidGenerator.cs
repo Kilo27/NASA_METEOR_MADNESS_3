@@ -13,6 +13,7 @@ public class AsteroidGenerator : MonoBehaviour
     {
         Debug.Log("Hello!!!");
         Asteroid asteroid = Instantiate(this.asteroid, transform);
+        asteroid.transform.position = new Vector3(10, 0, 0);
         asteroid.InitializeMesh(data);
     }
 

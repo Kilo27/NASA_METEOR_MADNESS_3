@@ -5,33 +5,46 @@ using UnityEngine;
 public class Ocean : MeshGenerator
 {
     [Header("Tsunami Animation Settings")]
-    [Tooltip("The initial height (amplitude) of the wave crest.")]
     public float waveAmplitude = 0.1f;
-    [Tooltip("The width of the wave crest in degrees. A larger value creates a wider wave.")]
     [Range(1f, 90f)]
     public float waveWidth = 25f;
-    [Tooltip("The speed the wave travels across the surface in degrees per second.")]
     public float waveSpeed = 60f;
+    [Range(1f, 180f)]
+    public float ogWrapAngleDegrees = 30f;
+    private float wrapAngleDegrees;
 
-    // --- ✨ NEW CRATER PARAMETERS ✨ ---
     [Header("Crater Settings")]
-    [Tooltip("The maximum depth of the crater at the impact point.")]
-    public float craterDepth = 0.2f;
-    [Tooltip("The radius of the crater in degrees.")]
+    public float ogCraterDepth = 0.2f;
     [Range(1f, 90f)]
-    public float craterRadius = 15f;
-    [Tooltip("Controls the sharpness of the crater's edge. >1 is sharper, <1 is softer.")]
-    public float craterFalloff = 2f;
+    public float ogCraterRadius = 15f;
+    public float ogCraterFalloff = 2f;
+    
+    [Tooltip("The speed at which water flows back into the crater.")]
+    public float craterFillSpeed = 0.05f; 
 
-    // Private variables for the animation state
+    private float craterDepth;
+    private float craterRadius;
+    private float craterFalloff;
+
     private Vector3[] originalVertices;
     private Vector3[] currentVertices;
 
+    private Mantle mantle;
+
     void Awake()
     {
+        GameObject mantleObject = GameObject.Find("Mantle");
+        if (mantleObject != null)
+        {
+            mantle = mantleObject.GetComponent<Mantle>();
+        }
+        else
+        {
+            Debug.LogError("Could not find an object named 'Mantle' in the scene.");
+        }
+        
         GenerateIcosphere();
-        // Initialize originalVertices here to prevent null reference on first impact
-        originalVertices = mesh.vertices; 
+        originalVertices = mesh.vertices;
     }
 
     void Update()
@@ -41,23 +54,45 @@ public class Ocean : MeshGenerator
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             if (Physics.Raycast(ray, out RaycastHit hit))
             {
-                StartTsunami(hit.point);
+                if (mantle != null)
+                {
+                    // mantle.DeformMantle(hit.point, 1.0f); 
+                }
+                StartTsunami(hit.point, 1.0f);
             }
         }
     }
 
-    public void StartTsunami(Vector3 worldImpactPoint)
+    // --- ⬇️ ALTERED METHOD ⬇️ ---
+    // This method now just starts the master sequence coroutine.
+    public void StartTsunami(Vector3 worldImpactPoint, float mass)
     {
         StopAllCoroutines();
-        
-        // --- ✨ LOGIC UPDATE ✨ ---
-        // First, apply the permanent crater to the mesh's base data.
-        ApplyCrater(worldImpactPoint);
-        // Then, start the wave animation on top of the newly cratered surface.
-        StartCoroutine(AnimateTsunami(worldImpactPoint));
+        StartCoroutine(RunImpactSequence(worldImpactPoint, mass));
     }
 
-    // --- ✨ NEW METHOD TO CREATE THE CRATER ✨ ---
+    // --- ✨ NEW MASTER COROUTINE ✨ ---
+    // This coroutine controls the sequence of events: crater, then tsunami, then fill.
+    private IEnumerator RunImpactSequence(Vector3 worldImpactPoint, float mass)
+    {
+        // 1. Set up all the impact parameters
+        craterDepth = ogCraterDepth + (mass / 100);
+        craterFalloff = ogCraterFalloff + (mass / 100);
+        craterRadius = ogCraterRadius + (mass / 100);
+        wrapAngleDegrees = ogWrapAngleDegrees + (mass / 100);
+
+        // 2. Apply the initial "evaporation" crater
+        ApplyCrater(worldImpactPoint);
+
+        // 3. Run the tsunami animation AND WAIT FOR IT TO COMPLETE.
+        // The 'yield return' is the magic here. It pauses this coroutine
+        // until AnimateTsunami is finished.
+        yield return StartCoroutine(AnimateTsunami(worldImpactPoint));
+        
+        // 4. NOW that the tsunami is over, start the crater fill animation.
+        yield return StartCoroutine(AnimateCraterFill(worldImpactPoint));
+    }
+
     private void ApplyCrater(Vector3 worldImpactPoint)
     {
         Vector3 localImpactPoint = transform.InverseTransformPoint(worldImpactPoint).normalized;
@@ -67,25 +102,24 @@ public class Ocean : MeshGenerator
             Vector3 vertexDir = originalVertices[i].normalized;
             float angle = Vector3.Angle(vertexDir, localImpactPoint);
 
-            // Only affect vertices within the crater's radius
             if (angle < craterRadius)
             {
-                // Calculate how deep the crater should be at this vertex
-                float normalizedDist = angle / craterRadius; // 0 at center, 1 at edge
+                float normalizedDist = angle / craterRadius;
                 float craterInfluence = Mathf.Pow(1 - normalizedDist, craterFalloff);
                 float depthOffset = craterInfluence * craterDepth;
-
-                // Apply the new, deeper position to our base vertex data
                 originalVertices[i] = vertexDir * (radius - depthOffset);
             }
         }
+        // Immediately update the mesh to show the new crater
+        mesh.vertices = originalVertices;
+        mesh.RecalculateNormals();
     }
-    
+
     private IEnumerator AnimateTsunami(Vector3 worldImpactPoint)
     {
-        // The 'originalVertices' array now contains the crater deformation
+        // This coroutine remains mostly the same, but it no longer needs to worry
+        // about the fill animation happening at the same time.
         currentVertices = new Vector3[originalVertices.Length];
-        
         Vector3 localImpactPoint = transform.InverseTransformPoint(worldImpactPoint).normalized;
 
         float[] vertexAngles = new float[originalVertices.Length];
@@ -94,20 +128,18 @@ public class Ocean : MeshGenerator
             vertexAngles[i] = Vector3.Angle(originalVertices[i].normalized, localImpactPoint);
         }
 
-        float duration = 180f / waveSpeed;
+        float duration = wrapAngleDegrees / waveSpeed;
         float elapsedTime = 0f;
 
         while (elapsedTime < duration)
         {
             elapsedTime += Time.deltaTime;
-
             float currentWaveAngle = elapsedTime * waveSpeed;
-            float dissipation = 1f - Mathf.Clamp01(currentWaveAngle / 180f);
+            float dissipation = 1f - Mathf.Clamp01(currentWaveAngle / wrapAngleDegrees);
             float currentAmplitude = waveAmplitude * dissipation;
 
             for (int i = 0; i < currentVertices.Length; i++)
             {
-                // The base position is now the cratered originalVertex
                 Vector3 baseVertex = originalVertices[i];
                 float heightOffset = 0f;
                 float distanceToCrest = Mathf.Abs(vertexAngles[i] - currentWaveAngle);
@@ -118,14 +150,13 @@ public class Ocean : MeshGenerator
                     float waveShape = Mathf.Cos(waveT * Mathf.PI * 0.5f);
                     heightOffset = waveShape * currentAmplitude;
                 }
-
-                // We add the wave height to the base radius of the cratered vertex
+                
                 currentVertices[i] = baseVertex.normalized * (baseVertex.magnitude + heightOffset);
             }
 
             mesh.vertices = currentVertices;
             mesh.RecalculateNormals();
-            
+
             var col = GetComponent<MeshCollider>();
             if (col != null)
             {
@@ -136,7 +167,7 @@ public class Ocean : MeshGenerator
             yield return null;
         }
 
-        // This now correctly resets the mesh to the cratered state
+        // When the tsunami is over, snap back to the base mesh, which still has the empty crater.
         mesh.vertices = originalVertices;
         mesh.RecalculateNormals();
         var finalCol = GetComponent<MeshCollider>();
@@ -144,6 +175,48 @@ public class Ocean : MeshGenerator
         {
             finalCol.sharedMesh = null;
             finalCol.sharedMesh = mesh;
+        }
+    }
+
+    private IEnumerator AnimateCraterFill(Vector3 worldImpactPoint)
+    {
+        // This coroutine is now only responsible for filling the crater, and it
+        // directly modifies the mesh vertices since the tsunami is over.
+        if (mantle == null) yield break;
+        
+        Vector3[] mantleVertices = mantle.DeformedVertices; 
+        if (mantleVertices == null || mantleVertices.Length != originalVertices.Length) yield break;
+    
+        Vector3 localImpactPoint = transform.InverseTransformPoint(worldImpactPoint).normalized;
+        bool isStillFilling = true;
+
+        while (isStillFilling)
+        {
+            isStillFilling = false;
+        
+            for (int i = 0; i < originalVertices.Length; i++)
+            {
+                float angle = Vector3.Angle(originalVertices[i].normalized, localImpactPoint);
+                if (angle < craterRadius)
+                {
+                    Vector3 targetPosition = mantleVertices[i].normalized * radius;
+                    if (originalVertices[i] != targetPosition)
+                    {
+                        originalVertices[i] = Vector3.MoveTowards(
+                            originalVertices[i],
+                            targetPosition,
+                            craterFillSpeed * Time.deltaTime
+                        );
+                        isStillFilling = true; 
+                    }
+                }
+            }
+
+            // Directly update the mesh vertices each frame during the fill
+            mesh.vertices = originalVertices;
+            mesh.RecalculateNormals();
+            
+            yield return null;
         }
     }
 }
