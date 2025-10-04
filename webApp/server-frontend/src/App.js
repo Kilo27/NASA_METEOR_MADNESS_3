@@ -4,17 +4,19 @@ import "./App.css";
 function App() {
   const canvasRef = useRef(null);
   const unityInstanceRef = useRef(null); 
+  var xpix="1920";
+  var ypix="1200";
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const buildUrl = process.env.PUBLIC_URL + "/unity_data/Build";
-    const loaderUrl = buildUrl + "/WebBuild2.loader.js";
+    const loaderUrl = buildUrl + "/webbuild.loader.js";
     const config = {
-      dataUrl: buildUrl + "/WebBuild2.data",
-      frameworkUrl: buildUrl + "/WebBuild2.framework.js",
-      codeUrl: buildUrl + "/WebBuild2.wasm",
+      dataUrl: buildUrl + "/webbuild.data",
+      frameworkUrl: buildUrl + "/webbuild.framework.js",
+      codeUrl: buildUrl + "/webbuild.wasm",
       companyName: "DefaultCompany",
       productName: "Hackathon_my_branch",
       productVersion: "0.1.0",
@@ -53,8 +55,8 @@ function App() {
         <canvas
           ref={canvasRef}
           id="unity-canvas"
-          width="1920"
-          height="1200"
+          width={xpix}
+          height={ypix}
           tabIndex="-1"
         />
         <div id="unity-loading-bar">
