@@ -1,9 +1,21 @@
+using TMPro;
 using UnityEngine;
 
 public class BackendTester : MonoBehaviour
 {
     private void Update()
     {
+
+        if (Input.GetKeyDown(KeyCode.B))
+        {
+            Debug.Log("asldhfsldg");
+            GameBackend.Instance.BigBossSimulation(90000, 100, 20, (data) =>
+            {
+                Debug.Log(data.seismic_effects.richter_magnitude);
+                Debug.Log(data.effect_radii.max_tsunami_range_km);
+                Debug.Log(data.atmospheric_passage.airburst_altitude_km);
+            });
+        }
         if (Input.GetKeyDown(KeyCode.G))
         {
             // Example usage: Fetch asteroids starting from 2023-10-01 for 2 weeks

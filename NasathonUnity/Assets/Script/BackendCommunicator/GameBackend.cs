@@ -2,6 +2,8 @@ using UnityEngine;
 using UnityEngine.Networking;
 using System.Collections;
 using System.Collections.Generic;
+using NUnit.Framework;
+using System;
 
 
 public class GameBackend : MonoBehaviour
@@ -175,6 +177,38 @@ public class GameBackend : MonoBehaviour
         }
     }
 
+    public void BigBossSimulation(float velocity, float diameter, int impactAngle, Action<AsteroidImpactData> onComplete)
+    {
+        StartCoroutine(BigBossSimulationCoroutine(velocity, diameter, impactAngle, onComplete));
+    }
+
+    private IEnumerator BigBossSimulationCoroutine(float velocity, float diameter, int impactAngle, Action<AsteroidImpactData> onComplete)
+    {
+        // Build the URL with query parameters
+        string url = $"{apiBaseURL}/simulate?velocity={velocity}&diameter={diameter}&impact_angle={impactAngle}";
+
+
+        using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
+        {
+            // Send the request
+            yield return webRequest.SendWebRequest();
+            
+            // Handle the response
+            switch (webRequest.result)
+            {
+                case UnityWebRequest.Result.Success:
+                    string text = webRequest.downloadHandler.text;
+                    onComplete?.Invoke(ParseBigBoss(text));
+                    break;
+                case UnityWebRequest.Result.ConnectionError:
+                case UnityWebRequest.Result.ProtocolError:
+                case UnityWebRequest.Result.DataProcessingError:
+                    Debug.LogError("Error: " + webRequest.error);
+                    break;
+            }
+        }
+    }
+
     [System.Serializable]
     public class BigBossResponse
     {
@@ -189,51 +223,9 @@ public class GameBackend : MonoBehaviour
         public Dictionary<string, string> tsunami_effects;
     }
 
-    public Dictionary<string, Dictionary<string, string>> ParseBigBoss(string jsonResponse)
+    public AsteroidImpactData ParseBigBoss(string jsonResponse) 
     {
-        Dictionary<string, Dictionary<string, string>> result = new Dictionary<string, Dictionary<string, string>>();
-        
-        try
-        {
-            // First, deserialize into the structured class
-            BigBossResponse data = JsonUtility.FromJson<BigBossResponse>(jsonResponse);
-            
-            // Convert each category to Dictionary<string, string>
-            if (data.asteroid_properties != null)
-                result["asteroid_properties"] = ConvertToStringDictionary(data.asteroid_properties);
-            
-            if (data.atmospheric_passage != null)
-                result["atmospheric_passage"] = ConvertToStringDictionary(data.atmospheric_passage);
-            
-            if (data.effect_radii != null)
-                result["effect_radii"] = ConvertToStringDictionary(data.effect_radii);
-            
-            if (data.effects_at_crater_rim != null)
-                result["effects_at_crater_rim"] = ConvertToStringDictionary(data.effects_at_crater_rim);
-            
-            if (data.impact_crater != null)
-                result["impact_crater"] = ConvertToStringDictionary(data.impact_crater);
-            
-            if (data.impact_severity_classification != null)
-                result["impact_severity_classification"] = ConvertToStringDictionary(data.impact_severity_classification);
-            
-            if (data.input_parameters != null)
-                result["input_parameters"] = ConvertToStringDictionary(data.input_parameters);
-            
-            if (data.seismic_effects != null)
-                result["seismic_effects"] = ConvertToStringDictionary(data.seismic_effects);
-            
-            if (data.tsunami_effects != null)
-                result["tsunami_effects"] = ConvertToStringDictionary(data.tsunami_effects);
-            
-            Debug.Log($"Successfully parsed {result.Count} categories");
-        }
-        catch (System.Exception e)
-        {
-            Debug.LogError($"Failed to parse BigBoss response: {e.Message}");
-        }
-        
-        return result;
+        return JsonUtility.FromJson<AsteroidImpactData>(jsonResponse);
     }
 
     private Dictionary<string, string> ConvertToStringDictionary(Dictionary<string, string> source)
@@ -307,3 +299,91 @@ public class AsteroidData
     // Add other fields as needed based on your API response
 }
 
+[System.Serializable]
+public class AsteroidProperties
+{
+    public string equivalent_nuclear_yield;
+    public double kinetic_energy_joules;
+    public double kinetic_energy_kt_tnt;
+    public double mass_kg;
+}
+
+[System.Serializable]
+public class AtmosphericPassage
+{
+    public double airburst_altitude_km;
+    public double breakup_altitude_km;
+    public string impact_scenario;
+    public string scenario_description;
+}
+
+[System.Serializable]
+public class EffectRadii
+{
+    public double fireball_radius_km;
+    public double max_tsunami_range_km;
+    public double overpressure_radius_20kpa_km;
+    public double overpressure_radius_5kpa_km;
+    public double shockwave_radius_50ms_km;
+    public double thermal_damage_radius_km;
+}
+
+[System.Serializable]
+public class EffectsAtCraterRim
+{
+    public double overpressure_kpa;
+    public double thermal_radiation_mj_m2;
+    public double wind_speed_m_s;
+}
+
+[System.Serializable]
+public class ImpactCrater
+{
+    public double crater_radius_km;
+    public double final_crater_diameter_km;
+    public double transient_crater_diameter_km;
+}
+
+[System.Serializable]
+public class ImpactSeverityClassification
+{
+    public string crater_class;
+    public string energy_class;
+    public string tsunami_class;
+}
+
+[System.Serializable]
+public class InputParameters
+{
+    public double impact_angle_deg;
+    public double mean_diameter_m;
+    public double velocity_km_s;
+}
+
+[System.Serializable]
+public class SeismicEffects
+{
+    public double richter_magnitude;
+}
+
+[System.Serializable]
+public class TsunamiEffects
+{
+    public double runup_height_at_100km_m;
+    public string tsunami_category;
+    public double wave_amplitude_at_100km_m;
+}
+
+[System.Serializable]
+public class AsteroidImpactData
+{
+    public AsteroidProperties asteroid_properties;
+    public AtmosphericPassage atmospheric_passage;
+    public EffectRadii effect_radii;
+    public EffectsAtCraterRim effects_at_crater_rim;
+    public ImpactCrater impact_crater;
+    public ImpactSeverityClassification impact_severity_classification;
+    public InputParameters input_parameters;
+    public SeismicEffects seismic_effects;
+    public TsunamiEffects tsunami_effects;
+}
