@@ -2,6 +2,8 @@ using UnityEngine;
 using UnityEngine.Networking;
 using System.Collections;
 using System.Collections.Generic;
+using NUnit.Framework;
+using System;
 
 
 public class GameBackend : MonoBehaviour
@@ -175,9 +177,68 @@ public class GameBackend : MonoBehaviour
         }
     }
 
-    public void BigBossSimulation()
+    public void BigBossSimulation(float velocity, float diameter, int impactAngle, Action<AsteroidImpactData> onComplete)
     {
+        StartCoroutine(BigBossSimulationCoroutine(velocity, diameter, impactAngle, onComplete));
+    }
+
+    private IEnumerator BigBossSimulationCoroutine(float velocity, float diameter, int impactAngle, Action<AsteroidImpactData> onComplete)
+    {
+        // Build the URL with query parameters
+        string url = $"{apiBaseURL}/simulate?velocity={velocity}&diameter={diameter}&impact_angle={impactAngle}";
+
+
+        using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
+        {
+            // Send the request
+            yield return webRequest.SendWebRequest();
+            
+            // Handle the response
+            switch (webRequest.result)
+            {
+                case UnityWebRequest.Result.Success:
+                    string text = webRequest.downloadHandler.text;
+                    onComplete?.Invoke(ParseBigBoss(text));
+                    break;
+                case UnityWebRequest.Result.ConnectionError:
+                case UnityWebRequest.Result.ProtocolError:
+                case UnityWebRequest.Result.DataProcessingError:
+                    Debug.LogError("Error: " + webRequest.error);
+                    break;
+            }
+        }
+    }
+
+    [System.Serializable]
+    public class BigBossResponse
+    {
+        public Dictionary<string, string> asteroid_properties;
+        public Dictionary<string, string> atmospheric_passage;
+        public Dictionary<string, string> effect_radii;
+        public Dictionary<string, string> effects_at_crater_rim;
+        public Dictionary<string, string> impact_crater;
+        public Dictionary<string, string> impact_severity_classification;
+        public Dictionary<string, string> input_parameters;
+        public Dictionary<string, string> seismic_effects;
+        public Dictionary<string, string> tsunami_effects;
+    }
+
+    public AsteroidImpactData ParseBigBoss(string jsonResponse) 
+    {
+        return JsonUtility.FromJson<AsteroidImpactData>(jsonResponse);
+    }
+
+    private Dictionary<string, string> ConvertToStringDictionary(Dictionary<string, string> source)
+    {
+        // This method ensures all values are properly converted to strings
+        Dictionary<string, string> result = new Dictionary<string, string>();
         
+        foreach (var kvp in source)
+        {
+            result[kvp.Key] = kvp.Value?.ToString() ?? "null";
+        }
+        
+        return result;
     }
 
     private void ProcessAsteroidData(string jsonData)
@@ -199,7 +260,7 @@ public class GameBackend : MonoBehaviour
         }
     }
 
-   [System.Serializable]
+    [System.Serializable]
     public class TrajectoryWrapper
     {
         public List<Vector3> trajectory;
@@ -238,3 +299,91 @@ public class AsteroidData
     // Add other fields as needed based on your API response
 }
 
+[System.Serializable]
+public class AsteroidProperties
+{
+    public string equivalent_nuclear_yield;
+    public double kinetic_energy_joules;
+    public double kinetic_energy_kt_tnt;
+    public double mass_kg;
+}
+
+[System.Serializable]
+public class AtmosphericPassage
+{
+    public double airburst_altitude_km;
+    public double breakup_altitude_km;
+    public string impact_scenario;
+    public string scenario_description;
+}
+
+[System.Serializable]
+public class EffectRadii
+{
+    public double fireball_radius_km;
+    public double max_tsunami_range_km;
+    public double overpressure_radius_20kpa_km;
+    public double overpressure_radius_5kpa_km;
+    public double shockwave_radius_50ms_km;
+    public double thermal_damage_radius_km;
+}
+
+[System.Serializable]
+public class EffectsAtCraterRim
+{
+    public double overpressure_kpa;
+    public double thermal_radiation_mj_m2;
+    public double wind_speed_m_s;
+}
+
+[System.Serializable]
+public class ImpactCrater
+{
+    public double crater_radius_km;
+    public double final_crater_diameter_km;
+    public double transient_crater_diameter_km;
+}
+
+[System.Serializable]
+public class ImpactSeverityClassification
+{
+    public string crater_class;
+    public string energy_class;
+    public string tsunami_class;
+}
+
+[System.Serializable]
+public class InputParameters
+{
+    public double impact_angle_deg;
+    public double mean_diameter_m;
+    public double velocity_km_s;
+}
+
+[System.Serializable]
+public class SeismicEffects
+{
+    public double richter_magnitude;
+}
+
+[System.Serializable]
+public class TsunamiEffects
+{
+    public double runup_height_at_100km_m;
+    public string tsunami_category;
+    public double wave_amplitude_at_100km_m;
+}
+
+[System.Serializable]
+public class AsteroidImpactData
+{
+    public AsteroidProperties asteroid_properties;
+    public AtmosphericPassage atmospheric_passage;
+    public EffectRadii effect_radii;
+    public EffectsAtCraterRim effects_at_crater_rim;
+    public ImpactCrater impact_crater;
+    public ImpactSeverityClassification impact_severity_classification;
+    public InputParameters input_parameters;
+    public SeismicEffects seismic_effects;
+    public TsunamiEffects tsunami_effects;
+}
